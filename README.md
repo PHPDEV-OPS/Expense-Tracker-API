@@ -27,8 +27,7 @@ An Expense Tracker RESTful API built with **Laravel**. Allows users to sign up, 
 10. [Logging & Debugging](#logging--debugging)
 11. [Security Considerations](#security-considerations)
 12. [Deployment](#deployment)
-13. [Contributing](#contributing)
-14. [License](#license)
+
 
 ---
 
