@@ -1,61 +1,514 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Expense Tracker API (Laravel)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+An Expense Tracker RESTful API built with **Laravel**. Allows users to sign up, log in (JWT-based authentication), and perform CRUD operations on their expenses. Each user has a private set of expenses and can filter them by date ranges (past week, past month, last 3 months, or a custom interval).
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Table of Contents
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+1. [Project Overview](#project-overview)
+2. [Features](#features)
+3. [Tech Stack](#tech-stack)
+4. [Getting Started](#getting-started)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+   * [Prerequisites](#prerequisites)
+   * [Installation](#installation)
+   * [Environment variables](#environment-variables)
+   * [Database setup, migrations & seeding](#database-setup-migrations--seeding)
+   * [Run the app](#run-the-app)
+5. [Authentication (JWT)](#authentication-jwt)
+6. [API Endpoints](#api-endpoints)
 
-## Learning Laravel
+   * [Auth](#auth)
+   * [Expenses](#expenses)
+7. [Filtering & Querying Expenses](#filtering--querying-expenses)
+8. [Validation Rules](#validation-rules)
+9. [Testing](#testing)
+10. [Logging & Debugging](#logging--debugging)
+11. [Security Considerations](#security-considerations)
+12. [Deployment](#deployment)
+13. [Contributing](#contributing)
+14. [License](#license)
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## Project Overview
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+This API provides endpoints for user registration and login using JWT, and full CRUD for expenses. Each expense belongs to a user and includes fields such as amount, category, date, and description. The API supports common filters to view expenses for predefined intervals and a custom date range.
 
-## Laravel Sponsors
+## Features
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+* User sign up and login
+* JWT-based authentication (token issuance and validation)
+* Create, read, update, delete expenses (CRUD)
+* Filter expenses by:
 
-### Premium Partners
+  * Past week
+  * Past month
+  * Last 3 months
+  * Custom date range (start_date & end_date)
+* Expense categories: `Groceries`, `Leisure`, `Electronics`, `Utilities`, `Clothing`, `Health`, `Others`
+* Input validation and error handling
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## Tech Stack
+
+* PHP >= 8.4
+* Laravel 12
+* MySQL / PostgreSQL / SQLite (developer choice)
+* tymon/jwt-auth (for JWT) or Laravel Sanctum (if you prefer token-based auth)
+* Eloquent ORM
+* PHPUnit for testing
+
+> This README assumes you chose `tymon/jwt-auth` for explicit JWT handling. If you used `sanctum`, adapt the auth sections accordingly.
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+* PHP >= 8.4
+* Composer
+* Node.js & npm (only if you have a front-end)
+* Database (SQLite)
+
+### Installation
+
+```bash
+# clone
+git clone <your-repo-url> expense-tracker-api
+cd expense-tracker-api
+
+# install php deps
+composer install
+
+# copy env
+cp .env.example .env
+
+# generate app key
+php artisan key:generate
+```
+
+### Environment variables
+
+Open `.env` and set these values (examples):
+
+```
+APP_NAME="Expense Tracker API"
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://localhost:8000
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=expense_tracker
+DB_USERNAME=root
+DB_PASSWORD=
+
+# JWT (for tymon/jwt-auth)
+JWT_SECRET= # will be generated by artisan command below
+```
+
+If using `tymon/jwt-auth`, publish package config and generate secret:
+
+```bash
+php artisan vendor:publish --provider="Tymon\JWTAuth\Providers\LaravelServiceProvider"
+php artisan jwt:secret
+```
+
+This will write `JWT_SECRET` to your `.env`.
+
+### Database setup, migrations & seeding
+
+```bash
+# create DB (if needed) then migrate
+php artisan migrate
+
+# (optional) seed categories and demo user
+php artisan db:seed
+```
+
+**Suggested seeders:**
+
+* `ExpenseCategorySeeder` to insert the required categories (Groceries, Leisure, etc.)
+* `UserSeeder` (optional) to create a demo user for local testing
+
+### Run the app
+
+```bash
+php artisan serve --host=0.0.0.0 --port=8000
+```
+
+API will be available at `http://localhost:8000`.
+
+---
+
+## Authentication (JWT)
+
+This project uses JWT for authenticating API requests. Flow:
+
+1. User signs up or logs in.
+2. Server returns a JWT access token.
+3. Client includes `Authorization: Bearer <token>` header in protected requests.
+
+**Register:** `POST /api/auth/register`
+**Login:** `POST /api/auth/login`
+**Refresh token:** `POST /api/auth/refresh` (if configured)
+**Logout:** `POST /api/auth/logout`
+
+Token lifetime and other options can be configured in `config/jwt.php` or `.env` depending on package.
+
+---
+
+## API Endpoints
+
+> All endpoints under `/api` and JSON content-type expected. Protected routes require `Authorization: Bearer <token>` header.
+
+### Auth
+
+#### Register
+
+`POST /api/auth/register`
+
+Request body:
+
+```json
+{
+  "name": "Test-api",
+  "email": "test@example.com",
+  "password": "secret",
+  "password_confirmation": "secret"
+}
+```
+
+Success response (201):
+
+```json
+{
+  "user": { "id": 1, "name": "Test-api", "email": "test@example.com" },
+  "token": "<jwt-token>",
+  "token_type": "bearer",
+  "expires_in": 3600
+}
+```
+
+#### Login
+
+`POST /api/auth/login`
+
+Request body:
+
+```json
+{ "email": "test@example.com", "password": "secret" }
+```
+
+Success response (200):
+
+```json
+{
+  "token": "<jwt-token>",
+  "token_type": "bearer",
+  "expires_in": 3600
+}
+```
+
+---
+
+### Expenses
+
+All expense routes are protected. Standard RESTful endpoints are used.
+
+#### List expenses
+
+`GET /api/expenses`
+
+Query params:
+
+* `filter` — `past_week` | `past_month` | `last_3_months` | `custom` (when using `custom` you must provide `start_date` and `end_date`)
+* `start_date` — `YYYY-MM-DD` (required with `filter=custom`)
+* `end_date` — `YYYY-MM-DD` (required with `filter=custom`)
+* `page` — pagination page
+* `per_page` — items per page
+
+Example:
+
+```
+GET /api/expenses?filter=past_month&per_page=20
+Authorization: Bearer <token>
+```
+
+Response:
+
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "amount": 24.50,
+      "category": "Groceries",
+      "description": "Weekly supermarket",
+      "expense_date": "2025-09-20",
+      "created_at": "2025-09-20T12:34:56Z"
+    }
+  ],
+  "links": { ... },
+  "meta": { ... }
+}
+```
+
+#### Create expense
+
+`POST /api/expenses`
+
+Request body:
+
+```json
+{
+  "amount": 45.50,
+  "category": "Utilities",
+  "description": "Electricity bill",
+  "expense_date": "2025-09-15"
+}
+```
+
+Success response (201):
+
+```json
+{ "message": "Expense created", "data": { /* expense object */ } }
+```
+
+#### Get single expense
+
+`GET /api/expenses/{id}`
+
+Response (200): expense object (only if it belongs to the authenticated user).
+
+#### Update expense
+
+`PUT /api/expenses/{id}` or `PATCH /api/expenses/{id}`
+
+Body fields are similar to create. Only owner can update. Returns updated expense.
+
+#### Delete expense
+
+`DELETE /api/expenses/{id}`
+
+Response (200):
+
+```json
+{ "message": "Expense deleted" }
+```
+
+---
+
+## Filtering & Querying Expenses
+
+Implement filtering in the controller (e.g., `ExpenseController@index`) using query parameters. Example logic:
+
+* `past_week`: `whereBetween('expense_date', [now()->subWeek()->startOfDay(), now()->endOfDay()])`
+* `past_month`: `whereBetween('expense_date', [now()->subMonth()->startOfDay(), now()->endOfDay()])`
+* `last_3_months`: `whereBetween('expense_date', [now()->subMonths(3)->startOfDay(), now()->endOfDay()])`
+* `custom`: validate `start_date` and `end_date` and use `whereBetween('expense_date', [$start, $end])`
+
+Also consider adding sort (`?sort=expense_date_desc`) and category filtering (`?category=Groceries`).
+
+---
+
+## Validation Rules
+
+Example Laravel `FormRequest` rules for creating/updating expenses:
+
+```php
+public function rules()
+{
+    return [
+        'amount' => 'required|numeric|min:0.01',
+        'category' => 'required|string|in:Groceries,Leisure,Electronics,Utilities,Clothing,Health,Others',
+        'description' => 'nullable|string|max:1000',
+        'expense_date' => 'required|date',
+    ];
+}
+```
+
+For registration and login use standard validation (email unique, password length, confirmation).
+
+---
+
+## Example Models & Relationships
+
+**User** (default Laravel model) has many `Expense`.
+
+**Expense** model examples:
+
+```php
+class Expense extends Model
+{
+    protected $fillable = ['user_id', 'amount', 'category', 'description', 'expense_date'];
+
+    protected $casts = [
+        'expense_date' => 'date',
+        'amount' => 'decimal:2',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+}
+```
+
+---
+
+## Routes (suggested)
+
+In `routes/api.php`:
+
+```php
+// public
+Route::post('auth/register', [AuthController::class, 'register']);
+Route::post('auth/login', [AuthController::class, 'login']);
+
+// protected group
+Route::middleware(['auth:api'])->group(function() {
+    Route::post('auth/logout', [AuthController::class, 'logout']);
+    Route::post('auth/refresh', [AuthController::class, 'refresh']);
+
+    Route::apiResource('expenses', ExpenseController::class);
+});
+```
+
+> Note: middleware name may differ based on JWT package (`auth:api` or `jwt.auth`).
+
+---
+
+## Testing
+
+Write feature tests (HTTP tests) with PHPUnit to cover:
+
+* Registration and login
+* Token required for protected routes
+* Create / update / delete expense permissions (only owner)
+* Filtering logic
+
+Example test snippet for creating an expense:
+
+```php
+public function test_user_can_create_expense()
+{
+    $user = User::factory()->create();
+    $token = auth()->login($user); // depends on auth package
+
+    $response = $this->withHeader('Authorization', "Bearer $token")
+        ->postJson('/api/expenses', [
+            'amount' => 12.34,
+            'category' => 'Groceries',
+            'expense_date' => now()->format('Y-m-d')
+        ]);
+
+    $response->assertStatus(201);
+}
+```
+
+---
+
+## Logging & Debugging
+
+* Use Laravel's logging (`storage/logs/laravel.log`) for server errors.
+* Use `php artisan tinker` for manual DB checks.
+* Enable `APP_DEBUG=true` only in local environment.
+
+---
+
+## Security Considerations
+
+* Always validate and sanitize inputs.
+* Use HTTPS in production.
+* Store JWT secret and DB credentials in environment variables (never commit `.env`).
+* Set appropriate token expiration and support token revocation on logout if possible.
+* Rate-limit authentication endpoints to prevent brute-force attacks (Laravel throttle middleware).
+* Ensure relationships and checks prevent users from accessing other users' expenses (e.g., `Expense::where('user_id', auth()->id())->findOrFail($id)`).
+
+---
+
+## Deployment Tips
+
+* Use `php artisan config:cache` and `php artisan route:cache` in production.
+* Set `APP_ENV=production` and `APP_DEBUG=false`.
+* Use supervisors or process managers to run queue workers if you add queued jobs.
+* Prefer managed DBs and ensure backups.
+
+---
 
 ## Contributing
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+1. Fork the repository
+2. Create a branch: `git checkout -b feature/your-feature`
+3. Commit changes: `git commit -m "Add some feature"`
+4. Push to the branch: `git push origin feature/your-feature`
+5. Open a Pull Request
 
-## Code of Conduct
+Please follow PSR-12 coding style and include tests for significant changes.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+---
 
-## Security Vulnerabilities
+## Postman / HTTP Collection
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Include a Postman collection or OpenAPI spec if you want others to easily test the API. Suggested endpoints to include in the collection:
+
+* `POST /api/auth/register`
+* `POST /api/auth/login`
+* `GET /api/expenses`
+* `POST /api/expenses`
+* `GET /api/expenses/{id}`
+* `PUT /api/expenses/{id}`
+* `DELETE /api/expenses/{id}`
+
+---
+
+## Troubleshooting
+
+* **401 Unauthorized**: Check token header is `Authorization: Bearer <token>` and token is not expired.
+* **403 Forbidden / 404 Not Found** on resource operations: Ensure you are operating on resources owned by the authenticated user.
+* **500 Internal Server Error**: Check `storage/logs/laravel.log` and `APP_DEBUG` in `.env`.
+
+---
+
+## Example curl commands
+
+Register:
+
+```bash
+curl -X POST http://localhost:8000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Test-api","email":"test@example.com","password":"secret","password_confirmation":"secret"}'
+```
+
+Login:
+
+```bash
+curl -X POST http://localhost:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"secret"}'
+```
+
+Create expense (replace `<token>`):
+
+```bash
+curl -X POST http://localhost:8000/api/expenses \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <token>" \
+  -d '{"amount": 19.99, "category": "Groceries", "expense_date": "2025-09-20", "description":"Lunch"}'
+```
+
+---
 
 ## License
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This project is released under the MIT License.
+
+---
+
+
+Just tell me which of the above you'd like next and I’ll add it to the repository.
