@@ -504,11 +504,3 @@ curl -X POST http://localhost:8000/api/expenses \
 
 ---
 
-## License
-
-This project is released under the MIT License.
-
----
-
-
-Just tell me which of the above you'd like next and I’ll add it to the repository.
